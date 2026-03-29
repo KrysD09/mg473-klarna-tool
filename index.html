@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MG473 · Klarna Sensitivity Analysis Tool</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --navy: #1A1A2E;
+    --red: #C8333A;
+    --red-light: #E8383D;
+    --gold: #E8A020;
+    --bg: #F5F6FA;
+    --card: #FFFFFF;
+    --border: #DDE3EE;
+    --text: #2C2C2C;
+    --muted: #6B7280;
+    --green: #10865A;
+    --amber: #D97706;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    background: var(--navy);
+    padding: 0 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    border-bottom: 3px solid var(--red);
+  }
+  .header-left { display: flex; align-items: center; gap: 16px; }
+  .logo-badge {
+    background: var(--red);
+    color: #fff;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    letter-spacing: 0.08em;
+  }
+  .header-title { color: #fff; font-size: 15px; font-weight: 500; letter-spacing: 0.02em; }
+  .header-right { color: rgba(255,255,255,0.5); font-size: 13px; }
+
+  /* ── LAYOUT ── */
+  .shell { max-width: 1160px; margin: 0 auto; padding: 32px 24px 80px; }
+
+  .page-title {
+    font-family: 'DM Serif Display', serif;
+    font-size: 36px;
+    color: var(--navy);
+    margin-bottom: 6px;
+    line-height: 1.15;
+  }
+  .page-sub { color: var(--muted); font-size: 15px; margin-bottom: 36px; }
+
+  /* ── STEP PILLS ── */
+  .steps {
+    display: flex;
+    gap: 0;
+    margin-bottom: 36px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+    background: var(--card);
+  }
+  .step {
+    flex: 1;
+    padding: 14px 16px;
+    cursor: pointer;
+    border-right: 1px solid var(--border);
+    transition: background 0.15s;
+    position: relative;
+  }
+  .step:last-child { border-right: none; }
+  .step:hover { background: #F0F3FA; }
+  .step.active { background: var(--navy); }
+  .step-num {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 3px;
+  }
+  .step.active .step-num { color: rgba(255,255,255,0.5); }
+  .step-label { font-size: 13px; font-weight: 600; color: var(--text); }
+  .step.active .step-label { color: #fff; }
+
+  /* ── GRID ── */
+  .grid { display: grid; grid-template-columns: 380px 1fr; gap: 24px; }
+  @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } }
+
+  /* ── CARD ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+  }
+  .card-title {
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--navy);
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--border);
+  }
+
+  /* ── FORM CONTROLS ── */
+  .field { margin-bottom: 20px; }
+  .field-label {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--muted);
+    margin-bottom: 6px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .field-val {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--navy);
+    font-variant-numeric: tabular-nums;
+  }
+  input[type=range] {
+    width: 100%;
+    height: 4px;
+    -webkit-appearance: none;
+    background: var(--border);
+    border-radius: 4px;
+    outline: none;
+    margin-top: 8px;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--navy);
+    cursor: pointer;
+    border: 2px solid #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.25);
+  }
+  .range-labels {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .anchor-note {
+    font-size: 11px;
+    color: var(--muted);
+    font-style: italic;
+    margin-top: 3px;
+  }
+
+  select {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    color: var(--text);
+    background: var(--bg);
+    cursor: pointer;
+    outline: none;
+  }
+  select:focus { border-color: var(--navy); }
+
+  /* ── LENS SELECTOR ── */
+  .lens-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .lens-btn {
+    padding: 10px 12px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg);
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    transition: all 0.15s;
+    text-align: center;
+  }
+  .lens-btn:hover { border-color: var(--navy); color: var(--navy); }
+  .lens-btn.active { background: var(--navy); border-color: var(--navy); color: #fff; }
+
+  /* ── OUTPUTS ── */
+  .metrics-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  .metric {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 14px;
+  }
+  .metric-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 6px; }
+  .metric-val { font-size: 22px; font-weight: 700; color: var(--navy); font-variant-numeric: tabular-nums; }
+  .metric-unit { font-size: 12px; font-weight: 400; color: var(--muted); }
+  .metric.highlight { background: var(--navy); border-color: var(--navy); }
+  .metric.highlight .metric-label { color: rgba(255,255,255,0.6); }
+  .metric.highlight .metric-val { color: #fff; }
+  .metric.highlight .metric-unit { color: rgba(255,255,255,0.6); }
+
+  /* ── RECOMMENDATION BADGE ── */
+  .rec-box {
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .rec-box.green { background: #ECFDF5; border: 1.5px solid #6EE7B7; }
+  .rec-box.amber { background: #FFFBEB; border: 1.5px solid #FCD34D; }
+  .rec-box.red   { background: #FEF2F2; border: 1.5px solid #FCA5A5; }
+  .rec-icon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+  .rec-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+  .rec-body { font-size: 13px; line-height: 1.55; color: var(--text); }
+  .rec-box.green .rec-title { color: var(--green); }
+  .rec-box.amber .rec-title { color: var(--amber); }
+  .rec-box.red .rec-title { color: var(--red); }
+
+  /* ── SENSITIVITY TABLE ── */
+  .sens-table-wrap { overflow-x: auto; margin-bottom: 20px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th {
+    background: var(--navy);
+    color: #fff;
+    padding: 10px 12px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--border); font-variant-numeric: tabular-nums; }
+  tr:nth-child(even) td { background: #FAFBFE; }
+  td.baseline { font-weight: 700; color: var(--navy); }
+  td.tip { color: var(--red); font-weight: 700; }
+  td.good { color: var(--green); }
+
+  /* ── TIPPING POINT ── */
+  .tip-box {
+    background: #FFF5F5;
+    border: 1.5px solid var(--red-light);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+  }
+  .tip-box .tip-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--red); letter-spacing: 0.07em; margin-bottom: 5px; }
+  .tip-box .tip-text { font-size: 13px; color: var(--text); line-height: 1.55; }
+
+  /* ── EXPORT BUTTON ── */
+  .btn {
+    padding: 11px 22px;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    transition: all 0.15s;
+  }
+  .btn-primary { background: var(--navy); color: #fff; }
+  .btn-primary:hover { background: #2A2A4E; }
+  .btn-outline { background: transparent; color: var(--navy); border: 2px solid var(--navy); }
+  .btn-outline:hover { background: var(--navy); color: #fff; }
+  .btn-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+
+  /* ── INSIGHTS PANEL ── */
+  .insight-list { list-style: none; }
+  .insight-list li {
+    padding: 12px 14px;
+    border-left: 3px solid var(--border);
+    margin-bottom: 10px;
+    font-size: 13px;
+    line-height: 1.55;
+    background: var(--bg);
+    border-radius: 0 8px 8px 0;
+  }
+  .insight-list li.active-insight { border-left-color: var(--red); background: #FFF5F5; }
+  .insight-list li b { color: var(--navy); }
+
+  /* ── CONTEXT PANEL ── */
+  .context-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    border-radius: 20px;
+    background: #EEF2FF;
+    color: var(--navy);
+    font-size: 12px;
+    font-weight: 600;
+    margin: 3px;
+  }
+  .chip-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--red); }
+
+  .section-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 12px;
+    margin-top: 24px;
+  }
+
+  canvas { max-height: 260px; }
+
+  /* PRINT */
+  @media print {
+    .header, .steps, .no-print { display: none !important; }
+    .grid { grid-template-columns: 1fr; }
+    .card { border: 1px solid #ccc; break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <span class="logo-badge">MG473</span>
+    <span class="header-title">Klarna AI Decision — Sensitivity Analysis Tool</span>
+  </div>
+  <div class="header-right">Spring 2026 · Individual Assignment 3</div>
+</div>
+
+<div class="shell">
+
+  <div class="page-title">Sensitivity Analysis Tool</div>
+  <div class="page-sub">Adjust the assumptions below and observe how the recommendation changes. Export your table for the Appendix.</div>
+
+  <!-- Step pills -->
+  <div class="steps">
+    <div class="step active" onclick="goStep(0,this)">
+      <div class="step-num">Step 1</div>
+      <div class="step-label">Select Your Lens</div>
+    </div>
+    <div class="step" onclick="goStep(1,this)">
+      <div class="step-num">Step 2</div>
+      <div class="step-label">Set Assumptions</div>
+    </div>
+    <div class="step" onclick="goStep(2,this)">
+      <div class="step-num">Step 3</div>
+      <div class="step-label">Choose Variable to Vary</div>
+    </div>
+    <div class="step" onclick="goStep(3,this)">
+      <div class="step-num">Step 4</div>
+      <div class="step-label">Read Results</div>
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <!-- ── LEFT PANEL: INPUTS ── -->
+    <div>
+      <!-- LENS -->
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-title">Functional Lens</div>
+        <div class="lens-grid">
+          <button class="lens-btn active" onclick="setLens('finance',this)">💰 Finance</button>
+          <button class="lens-btn" onclick="setLens('marketing',this)">📣 Marketing</button>
+          <button class="lens-btn" onclick="setLens('operations',this)">⚙️ Operations</button>
+          <button class="lens-btn" onclick="setLens('hr',this)">👥 HR</button>
+          <button class="lens-btn" onclick="setLens('innovation',this)" style="grid-column:span 2">🚀 Innovation</button>
+        </div>
+        <div id="lens-context" class="insight-list"></div>
+      </div>
+
+      <!-- BASELINE INPUTS -->
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-title">Baseline Assumptions</div>
+        <div id="inputs-area"></div>
+      </div>
+
+      <!-- VARIABLE TO VARY -->
+      <div class="card">
+        <div class="card-title">Sensitivity Variable</div>
+        <div class="field">
+          <div class="field-label">Which variable do you want to test?</div>
+          <select id="vary-select" onchange="updateAll()"></select>
+        </div>
+        <div class="field">
+          <div class="field-label">
+            Variation range
+            <span class="field-val" id="range-val">±30%</span>
+          </div>
+          <input type="range" id="range-slider" min="10" max="60" value="30" step="5" oninput="document.getElementById('range-val').textContent='±'+this.value+'%'; updateAll()"/>
+          <div class="range-labels"><span>±10%</span><span>±60%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── RIGHT PANEL: OUTPUTS ── -->
+    <div>
+
+      <!-- METRICS ROW -->
+      <div class="metrics-row" id="metrics-row"></div>
+
+      <!-- RECOMMENDATION -->
+      <div id="rec-box-container"></div>
+
+      <!-- TIPPING POINT -->
+      <div id="tipping-point-box"></div>
+
+      <!-- CHART -->
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-title">Sensitivity Chart — <span id="chart-title">Net Value vs. Varied Assumption</span></div>
+        <canvas id="sens-chart"></canvas>
+      </div>
+
+      <!-- TABLE -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-title">Sensitivity Table <span style="font-weight:400;color:var(--muted);font-size:12px">(include in Appendix)</span></div>
+        <div class="sens-table-wrap">
+          <table id="sens-table"></table>
+        </div>
+        <div class="btn-row no-print">
+          <button class="btn btn-primary" onclick="printTable()">🖨 Print / Save Table</button>
+          <button class="btn btn-outline" onclick="copyTable()">📋 Copy Table</button>
+        </div>
+      </div>
+
+      <!-- INSIGHTS -->
+      <div class="card">
+        <div class="card-title">Analytical Insights for Your Report</div>
+        <ul class="insight-list" id="insights-list"></ul>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── STATE ──────────────────────────────────────────────────────────────────
+let lens = 'finance';
+let chart = null;
+let params = {};
+
+// ─── LENS CONFIGS ────────────────────────────────────────────────────────────
+const LENSES = {
+  finance: {
+    label: 'Finance',
+    context: [
+      { text: '<b>Primary metric:</b> Net financial value of AI strategy (savings minus costs minus reversal costs)' },
+      { text: '<b>Decision criteria to test:</b> ROI, payback period, net savings after reversal', active: true },
+      { text: '<b>Key uncertainty:</b> How much did the 2025 reversal actually cost Klarna in re-hiring and brand damage?' },
+    ],
+    inputs: [
+      { id: 'deploy_cost', label: 'AI Deployment Cost ($M)', min: 1, max: 10, step: 0.5, val: 2.5, anchor: 'Klarna reported: ~$2–3M' },
+      { id: 'annual_savings', label: 'Annual Cost Savings ($M)', min: 10, max: 80, step: 1, val: 39, anchor: 'Klarna confirmed: $39M (2024)' },
+      { id: 'reversal_cost', label: 'Re-hiring & Reversal Cost ($M)', min: 0, max: 30, step: 1, val: 8, anchor: 'Estimated: rehiring ~200+ agents' },
+      { id: 'csat_impact', label: 'Customer Satisfaction Retained (%)', min: 40, max: 100, step: 5, val: 85, anchor: 'Klarna claimed 100%; analysts disputed' },
+      { id: 'churn_rate', label: 'Customer Churn Increase due to AI (%)', min: 0, max: 20, step: 1, val: 5, anchor: 'Estimated from quality concerns' },
+    ],
+    varyOptions: ['deploy_cost','annual_savings','reversal_cost','csat_impact','churn_rate'],
+    compute: (p) => {
+      const net = p.annual_savings - p.deploy_cost - p.reversal_cost;
+      const roi = ((p.annual_savings - p.deploy_cost) / p.deploy_cost * 100);
+      const risk_adj = net * (p.csat_impact/100) * (1 - p.churn_rate/100);
+      return { net, roi, risk_adj };
+    },
+    metrics: (p, c) => [
+      { label: 'Net Savings (Year 1)', val: fmt(c.net,'$','M'), highlight: true },
+      { label: 'Simple ROI', val: fmt(c.roi,'','%') },
+      { label: 'Risk-Adjusted Value', val: fmt(c.risk_adj,'$','M') },
+    ],
+    primaryMetric: (p) => {
+      const c = LENSES.finance.compute(p);
+      return c.risk_adj;
+    },
+    chartLabel: 'Risk-Adjusted Net Value ($M)',
+    recLogic: (val) => {
+      if (val > 25) return { cls:'green', icon:'✅', title:'Full AI Automation is Financially Justified', body:`Under your assumptions, the risk-adjusted net value of $${val.toFixed(1)}M makes a strong financial case for the AI-first strategy.` };
+      if (val > 10) return { cls:'amber', icon:'⚖️', title:'Hybrid Model Preferable', body:`The risk-adjusted value of $${val.toFixed(1)}M is positive but narrow. A hybrid model would reduce reversal risk while preserving most of the financial upside.` };
+      return { cls:'red', icon:'⚠️', title:'Human-First Strategy Warranted', body:`At a risk-adjusted value of $${val.toFixed(1)}M, the financial case for full automation does not hold. The reversal and churn costs erode the savings.` };
+    },
+    tippingLabel: 'Risk-Adjusted Net Value',
+    tippingDirection: 'falls below $10M',
+  },
+  marketing: {
+    label: 'Marketing',
+    context: [
+      { text: '<b>Primary metric:</b> Net Promoter Score (NPS) impact and customer retention' },
+      { text: '<b>Decision criteria to test:</b> Customer satisfaction parity, repeat inquiry rate, brand trust', active: true },
+      { text: '<b>Key uncertainty:</b> How much of the satisfaction gap was due to AI quality vs. customer expectations?' },
+    ],
+    inputs: [
+      { id: 'ai_csat', label: 'AI Customer Satisfaction (% of human parity)', min: 50, max: 100, step: 5, val: 90, anchor: 'Klarna claimed 100%; surveys showed gaps' },
+      { id: 'repeat_reduction', label: 'Repeat Inquiry Reduction (%)', min: 0, max: 50, step: 5, val: 25, anchor: 'Klarna confirmed: 25% drop' },
+      { id: 'resolution_time', label: 'AI Resolution Time (minutes)', min: 1, max: 8, step: 0.5, val: 2, anchor: 'Klarna confirmed: <2 min vs 11 min human' },
+      { id: 'trust_erosion', label: 'Brand Trust Erosion (%)', min: 0, max: 30, step: 2, val: 10, anchor: 'Estimated: from CEO public reversal admission' },
+      { id: 'loyal_retention', label: 'Loyal Customer Retention (%)', min: 60, max: 100, step: 5, val: 88, anchor: 'Estimated from churn signals' },
+    ],
+    varyOptions: ['ai_csat','repeat_reduction','resolution_time','trust_erosion','loyal_retention'],
+    compute: (p) => {
+      const cx_score = (p.ai_csat/100 * 40) + (p.repeat_reduction/50 * 20) + ((11-p.resolution_time)/10 * 20) - (p.trust_erosion/30 * 20) + (p.loyal_retention/100 * 20) - 40;
+      const nps_delta = cx_score * 0.8;
+      const brand_index = (p.loyal_retention * (1 - p.trust_erosion/100));
+      return { cx_score, nps_delta, brand_index };
+    },
+    metrics: (p, c) => [
+      { label: 'CX Score (0–100)', val: fmt(Math.max(0,Math.min(100,c.cx_score+50)),'',''), highlight: true },
+      { label: 'Est. NPS Delta', val: fmt(c.nps_delta,'+','pts') },
+      { label: 'Brand Retention Index', val: fmt(c.brand_index,'','') },
+    ],
+    primaryMetric: (p) => {
+      const c = LENSES.marketing.compute(p);
+      return c.cx_score;
+    },
+    chartLabel: 'CX Score',
+    recLogic: (val) => {
+      if (val > 10) return { cls:'green', icon:'✅', title:'AI Automation Supports Marketing Goals', body:`Your CX Score indicates AI adoption is preserving customer experience. Brand positioning remains intact.` };
+      if (val > -5) return { cls:'amber', icon:'⚖️', title:'Hybrid Model Recommended', body:`The CX Score is marginal. A hybrid model would protect NPS and brand trust while retaining speed benefits.` };
+      return { cls:'red', icon:'⚠️', title:'AI-First Risks Brand Positioning', body:`Under these assumptions, customer trust erosion outweighs efficiency gains. Human-first with AI support is the safer marketing choice.` };
+    },
+    tippingLabel: 'CX Score',
+    tippingDirection: 'falls below 0 (neutral)',
+  },
+  operations: {
+    label: 'Operations',
+    context: [
+      { text: '<b>Primary metric:</b> Operational efficiency — throughput per agent equivalent, resolution rate' },
+      { text: '<b>Decision criteria to test:</b> Capacity, scalability, bottleneck identification', active: true },
+      { text: '<b>Key uncertainty:</b> What share of inquiries is genuinely automatable vs. requires human judgment?' },
+    ],
+    inputs: [
+      { id: 'pct_automatable', label: 'Share of Inquiries Automatable (%)', min: 30, max: 90, step: 5, val: 67, anchor: 'Klarna reported: 67% handled by AI' },
+      { id: 'ai_accuracy', label: 'AI First-Contact Resolution Rate (%)', min: 50, max: 100, step: 5, val: 82, anchor: 'Inferred from 25% repeat inquiry drop' },
+      { id: 'escalation_cost', label: 'Cost per Human Escalation ($)', min: 5, max: 50, step: 5, val: 20, anchor: 'Estimated from agent cost benchmarks' },
+      { id: 'volume_growth', label: 'Annual Volume Growth (%)', min: 0, max: 40, step: 5, val: 20, anchor: 'Klarna: 114M active users, +32% YoY' },
+      { id: 'agent_cost', label: 'Cost per Human Agent FTE ($/yr, thousands)', min: 30, max: 80, step: 5, val: 55, anchor: 'Typical CS agent salary range' },
+    ],
+    varyOptions: ['pct_automatable','ai_accuracy','escalation_cost','volume_growth','agent_cost'],
+    compute: (p) => {
+      const capacity_gain = p.pct_automatable * p.ai_accuracy / 100;
+      const escalation_load = (100 - p.pct_automatable) + (p.pct_automatable * (1-p.ai_accuracy/100));
+      const cost_per_interaction = (escalation_load/100 * p.escalation_cost + p.pct_automatable/100 * 0.5);
+      const scalability = capacity_gain * (1 + p.volume_growth/100);
+      return { capacity_gain, escalation_load, cost_per_interaction, scalability };
+    },
+    metrics: (p, c) => [
+      { label: 'Capacity Gain (%)', val: fmt(c.capacity_gain,'','%'), highlight: true },
+      { label: 'Escalation Load (%)', val: fmt(c.escalation_load,'','%') },
+      { label: 'Scalability Score', val: fmt(c.scalability,'','') },
+    ],
+    primaryMetric: (p) => {
+      const c = LENSES.operations.compute(p);
+      return c.capacity_gain;
+    },
+    chartLabel: 'Capacity Gain (%)',
+    recLogic: (val) => {
+      if (val > 50) return { cls:'green', icon:'✅', title:'Full AI Automation is Operationally Sound', body:`A capacity gain of ${val.toFixed(0)}% makes the AI-first model operationally superior. Bottlenecks are shifted, not eliminated.` };
+      if (val > 35) return { cls:'amber', icon:'⚖️', title:'Hybrid Model Balances Capacity and Quality', body:`At ${val.toFixed(0)}% capacity gain, the AI contribution is real but not sufficient to fully eliminate human capacity requirements.` };
+      return { cls:'red', icon:'⚠️', title:'Human-AI Balance Required', body:`A capacity gain of only ${val.toFixed(0)}% does not justify full automation. Too many inquiries require human judgment.` };
+    },
+    tippingLabel: 'Capacity Gain',
+    tippingDirection: 'drops below 35%',
+  },
+  hr: {
+    label: 'HR',
+    context: [
+      { text: '<b>Primary metric:</b> Workforce impact score — balancing efficiency, displacement, and organizational health' },
+      { text: '<b>Decision criteria to test:</b> FTE displacement, retraining feasibility, morale risk', active: true },
+      { text: '<b>Key uncertainty:</b> How many of the 700 "replaced" roles were truly eliminated vs. redeployed?' },
+    ],
+    inputs: [
+      { id: 'fte_displaced', label: 'FTE Roles Displaced (count)', min: 0, max: 1000, step: 50, val: 700, anchor: 'Klarna: equivalent of 700 FTE (2024)' },
+      { id: 'retraining_pct', label: 'Employees Successfully Retrained (%)', min: 0, max: 100, step: 10, val: 40, anchor: 'Estimated from Klarna partner reassignment' },
+      { id: 'morale_hit', label: 'Workforce Morale Impact (1–10 scale)', min: 1, max: 10, step: 1, val: 6, anchor: 'Estimated from hiring freeze + layoff context' },
+      { id: 'rehire_cost', label: 'Cost to Rehire per Agent ($K)', min: 5, max: 30, step: 2.5, val: 12, anchor: 'Typical CS recruitment + onboarding cost' },
+      { id: 'ai_upskill', label: 'Employees Using AI Daily (%)', min: 30, max: 100, step: 5, val: 87, anchor: 'Klarna confirmed: 87–90% AI daily usage' },
+    ],
+    varyOptions: ['fte_displaced','retraining_pct','morale_hit','rehire_cost','ai_upskill'],
+    compute: (p) => {
+      const redeployed = p.fte_displaced * (p.retraining_pct/100);
+      const truly_lost = p.fte_displaced - redeployed;
+      const reversal_rehire_cost = truly_lost * p.rehire_cost / 1000;
+      const org_health = (p.retraining_pct * 0.3) + (p.ai_upskill * 0.4) - (p.morale_hit * 5) - (truly_lost/p.fte_displaced * 20);
+      return { redeployed, truly_lost, reversal_rehire_cost, org_health };
+    },
+    metrics: (p, c) => [
+      { label: 'Org Health Score', val: fmt(Math.max(-100,Math.min(100,c.org_health)),'',''), highlight: true },
+      { label: 'Roles Truly Lost', val: fmt(c.truly_lost,'','') },
+      { label: 'Reversal Hire Cost ($M)', val: fmt(c.reversal_rehire_cost,'$','M') },
+    ],
+    primaryMetric: (p) => {
+      const c = LENSES.hr.compute(p);
+      return c.org_health;
+    },
+    chartLabel: 'Org Health Score',
+    recLogic: (val) => {
+      if (val > 20) return { cls:'green', icon:'✅', title:'AI-First with Strong Upskilling is HR-Viable', body:`The Org Health Score of ${val.toFixed(0)} suggests workforce transition is manageable if retraining investment is prioritized.` };
+      if (val > 0) return { cls:'amber', icon:'⚖️', title:'Phased Hybrid Approach Recommended', body:`An Org Health Score of ${val.toFixed(0)} indicates real workforce strain. A phased transition with retraining would have reduced morale and reversal costs.` };
+      return { cls:'red', icon:'⚠️', title:'Aggressive AI Displacement Creates Organizational Risk', body:`A negative Org Health Score indicates that the costs of displacement, low morale, and reversal rehiring outweigh organizational benefits.` };
+    },
+    tippingLabel: 'Org Health Score',
+    tippingDirection: 'drops below 0',
+  },
+  innovation: {
+    label: 'Innovation',
+    context: [
+      { text: '<b>Primary metric:</b> Innovation advantage score — speed, differentiation, and sustainable competitive edge' },
+      { text: '<b>Decision criteria to test:</b> Speed of deployment, learning curve, governance risk', active: true },
+      { text: '<b>Key uncertainty:</b> Did Klarna\'s public AI strategy create lasting competitive advantage or only first-mover publicity?' },
+    ],
+    inputs: [
+      { id: 'speed_adv', label: 'Speed Advantage over Competitors (months)', min: 0, max: 24, step: 3, val: 12, anchor: 'Klarna: first fintech to deploy GPT globally' },
+      { id: 'governance_risk', label: 'Governance Failure Risk (1–10 scale)', min: 1, max: 10, step: 1, val: 6, anchor: 'Estimated: AI errors, regulatory inquiry risk' },
+      { id: 'learning_rate', label: 'Organizational AI Learning Rate (1–10)', min: 1, max: 10, step: 1, val: 8, anchor: 'Klarna: 87% daily AI usage = high learning' },
+      { id: 'competitor_lag', label: 'Competitor Catch-Up Time (months)', min: 3, max: 36, step: 3, val: 18, anchor: 'Estimated from industry adoption curves' },
+      { id: 'reputational_risk', label: 'Reputational Risk from Over-Automation (1–10)', min: 1, max: 10, step: 1, val: 7, anchor: 'Elevated: CEO publicly admitted error' },
+    ],
+    varyOptions: ['speed_adv','governance_risk','learning_rate','competitor_lag','reputational_risk'],
+    compute: (p) => {
+      const innov_score = (p.speed_adv/24 * 30) + (p.learning_rate/10 * 25) + (p.competitor_lag/36 * 25) - (p.governance_risk/10 * 25) - (p.reputational_risk/10 * 25);
+      const net_advantage = p.speed_adv - (p.governance_risk * 1.5);
+      const sustainability = p.learning_rate * (1 - p.reputational_risk/20);
+      return { innov_score, net_advantage, sustainability };
+    },
+    metrics: (p, c) => [
+      { label: 'Innovation Advantage Score', val: fmt(Math.max(0,c.innov_score),'',''), highlight: true },
+      { label: 'Net Speed Advantage (adj.)', val: fmt(c.net_advantage,'','mo') },
+      { label: 'Sustainability Index', val: fmt(c.sustainability,'','') },
+    ],
+    primaryMetric: (p) => {
+      const c = LENSES.innovation.compute(p);
+      return c.innov_score;
+    },
+    chartLabel: 'Innovation Advantage Score',
+    recLogic: (val) => {
+      if (val > 20) return { cls:'green', icon:'✅', title:'Bold AI Leadership was the Right Innovation Bet', body:`An Innovation Advantage Score of ${val.toFixed(0)} suggests first-mover positioning outweighs governance risks.` };
+      if (val > 8) return { cls:'amber', icon:'⚖️', title:'Staged Experimentation Would Have Been Safer', body:`At ${val.toFixed(0)}, the innovation advantage is real but fragile. A controlled pilot would have validated assumptions without the reputational correction.` };
+      return { cls:'red', icon:'⚠️', title:'Governance Risk Eroded Innovation Gains', body:`Under these assumptions, governance failure and reputational risk offset the speed advantage, making a more structured approach preferable.` };
+    },
+    tippingLabel: 'Innovation Advantage Score',
+    tippingDirection: 'drops below 8',
+  },
+};
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────────
+function fmt(v, prefix='', suffix='') {
+  if (typeof v !== 'number' || isNaN(v)) return '—';
+  const abs = Math.abs(v);
+  const rounded = abs >= 100 ? Math.round(abs) : Math.round(abs*10)/10;
+  const sign = v < 0 ? '-' : '';
+  return `${sign}${prefix}${rounded}${suffix}`;
+}
+
+function getParams() {
+  const cfg = LENSES[lens];
+  const p = {};
+  cfg.inputs.forEach(inp => {
+    const el = document.getElementById('inp_'+inp.id);
+    p[inp.id] = el ? parseFloat(el.value) : inp.val;
+  });
+  return p;
+}
+
+// ─── STEP NAV ─────────────────────────────────────────────────────────────────
+function goStep(i, el) {
+  document.querySelectorAll('.step').forEach(s=>s.classList.remove('active'));
+  el.classList.add('active');
+}
+
+// ─── LENS ─────────────────────────────────────────────────────────────────────
+function setLens(l, btn) {
+  lens = l;
+  document.querySelectorAll('.lens-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderInputs();
+  renderContext();
+  renderVarySelect();
+  updateAll();
+}
+
+function renderContext() {
+  const cfg = LENSES[lens];
+  const ul = document.getElementById('lens-context');
+  ul.innerHTML = cfg.context.map(c =>
+    `<li class="${c.active?'active-insight':''}">${c.text}</li>`
+  ).join('');
+}
+
+function renderInputs() {
+  const cfg = LENSES[lens];
+  const area = document.getElementById('inputs-area');
+  area.innerHTML = cfg.inputs.map(inp => `
+    <div class="field">
+      <div class="field-label">
+        ${inp.label}
+        <span class="field-val" id="disp_${inp.id}">${inp.val}</span>
+      </div>
+      <input type="range" id="inp_${inp.id}" min="${inp.min}" max="${inp.max}" step="${inp.step}" value="${inp.val}"
+        oninput="document.getElementById('disp_${inp.id}').textContent=this.value; updateAll()"/>
+      <div class="range-labels"><span>${inp.min}</span><span>${inp.max}</span></div>
+      <div class="anchor-note">📌 ${inp.anchor}</div>
+    </div>
+  `).join('');
+}
+
+function renderVarySelect() {
+  const cfg = LENSES[lens];
+  const sel = document.getElementById('vary-select');
+  const inputMap = {};
+  cfg.inputs.forEach(i => inputMap[i.id] = i.label);
+  sel.innerHTML = cfg.varyOptions.map(id =>
+    `<option value="${id}">${inputMap[id] || id}</option>`
+  ).join('');
+}
+
+// ─── UPDATE ───────────────────────────────────────────────────────────────────
+function updateAll() {
+  const p = getParams();
+  const cfg = LENSES[lens];
+  const computed = cfg.compute(p);
+  const primaryVal = cfg.primaryMetric(p);
+
+  // Metrics
+  const metricsData = cfg.metrics(p, computed);
+  const mr = document.getElementById('metrics-row');
+  mr.innerHTML = metricsData.map(m => `
+    <div class="metric ${m.highlight?'highlight':''}">
+      <div class="metric-label">${m.label}</div>
+      <div class="metric-val">${m.val}</div>
+    </div>
+  `).join('');
+
+  // Recommendation
+  const rec = cfg.recLogic(primaryVal);
+  document.getElementById('rec-box-container').innerHTML = `
+    <div class="rec-box ${rec.cls}">
+      <div class="rec-icon">${rec.icon}</div>
+      <div>
+        <div class="rec-title">${rec.title}</div>
+        <div class="rec-body">${rec.body}</div>
+      </div>
+    </div>
+  `;
+
+  // Sensitivity table + chart
+  const varyId = document.getElementById('vary-select').value;
+  const rangePct = parseFloat(document.getElementById('range-slider').value) / 100;
+  const varyInp = cfg.inputs.find(i => i.id === varyId);
+  if (!varyInp) return;
+
+  const baseVal = parseFloat(document.getElementById('inp_'+varyId)?.value || varyInp.val);
+  const steps = [-rangePct, -rangePct*0.67, -rangePct*0.33, 0, rangePct*0.33, rangePct*0.67, rangePct];
+  const rows = steps.map(s => {
+    const variedVal = Math.max(varyInp.min, Math.min(varyInp.max, baseVal * (1+s)));
+    const vp = {...p, [varyId]: variedVal};
+    const pm = cfg.primaryMetric(vp);
+    return { pct: Math.round(s*100), val: variedVal, pm };
+  });
+
+  // Tipping point
+  const tipRow = rows.find(r => {
+    const rec0 = cfg.recLogic(rows[3].pm).cls;
+    return cfg.recLogic(r.pm).cls !== rec0 && r.pct !== 0;
+  });
+  const tipBox = document.getElementById('tipping-point-box');
+  if (tipRow) {
+    tipBox.innerHTML = `<div class="tip-box">
+      <div class="tip-label">⚡ Tipping Point Identified</div>
+      <div class="tip-text">Your recommendation changes when <b>${varyInp.label}</b> ${tipRow.pct > 0 ? 'increases' : 'decreases'} by <b>${Math.abs(tipRow.pct)}%</b> from baseline (to <b>${tipRow.val.toFixed(1)}</b>). At that point, ${cfg.tippingLabel} ${cfg.tippingDirection}.</div>
+    </div>`;
+  } else {
+    tipBox.innerHTML = `<div class="tip-box" style="background:#F0FDF4;border-color:#6EE7B7">
+      <div class="tip-label" style="color:var(--green)">✅ Recommendation is Stable</div>
+      <div class="tip-text">Within the tested range, your recommendation does not change. The decision is robust to variation in <b>${varyInp.label}</b>. This increases your confidence in the recommendation.</div>
+    </div>`;
+  }
+
+  // Table
+  const tbl = document.getElementById('sens-table');
+  tbl.innerHTML = `<thead><tr>
+    <th>Change from Baseline</th>
+    <th>${varyInp.label}</th>
+    <th>${cfg.chartLabel}</th>
+    <th>Recommendation</th>
+  </tr></thead><tbody>` +
+  rows.map(r => {
+    const r2 = cfg.recLogic(r.pm);
+    const isBase = r.pct === 0;
+    const isTip = tipRow && r.pct === tipRow.pct;
+    return `<tr>
+      <td class="${isBase?'baseline':''}">${r.pct > 0 ? '+':''}${r.pct}%${isBase?' (baseline)':''}</td>
+      <td class="${isBase?'baseline':isTip?'tip':''}">${r.val.toFixed(1)}</td>
+      <td class="${isBase?'baseline':r.pm > rows[3].pm?'good':''}">${r.pm.toFixed(1)}</td>
+      <td class="${isTip?'tip':''}">${r2.title}</td>
+    </tr>`;
+  }).join('') + '</tbody>';
+
+  // Chart
+  const labels = rows.map(r => `${r.pct>0?'+':''}${r.pct}%`);
+  const data = rows.map(r => parseFloat(r.pm.toFixed(2)));
+  const baselinePM = rows[3].pm;
+
+  if (chart) chart.destroy();
+  chart = new Chart(document.getElementById('sens-chart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: cfg.chartLabel,
+        data,
+        borderColor: '#1A1A2E',
+        backgroundColor: 'rgba(26,26,46,0.08)',
+        borderWidth: 2.5,
+        pointBackgroundColor: data.map(v => {
+          const r = cfg.recLogic(v);
+          return r.cls === 'green' ? '#10865A' : r.cls === 'amber' ? '#D97706' : '#C8333A';
+        }),
+        pointRadius: 7,
+        tension: 0.35,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${cfg.chartLabel}: ${ctx.parsed.y.toFixed(1)}`,
+            afterLabel: ctx => cfg.recLogic(ctx.parsed.y).title,
+          }
+        }
+      },
+      scales: {
+        y: { grid: { color: '#DDE3EE' }, ticks: { font: { family: 'DM Sans' } } },
+        x: { grid: { display: false }, ticks: { font: { family: 'DM Sans' } } }
+      }
+    }
+  });
+
+  // Update chart title
+  document.getElementById('chart-title').textContent = `${cfg.chartLabel} as ${varyInp.label} Varies`;
+
+  // Insights
+  const insights = generateInsights(rows, cfg, varyInp, baselinePM, tipRow);
+  document.getElementById('insights-list').innerHTML = insights.map((ins,i)=>
+    `<li class="${i===0?'active-insight':''}">${ins}</li>`
+  ).join('');
+}
+
+function generateInsights(rows, cfg, varyInp, baselinePM, tipRow) {
+  const top = rows[rows.length-1].pm;
+  const bottom = rows[0].pm;
+  const swing = Math.abs(top - bottom);
+  const pctSwing = Math.round(swing / Math.abs(baselinePM) * 100);
+
+  const ins = [];
+  ins.push(`<b>Sensitivity:</b> A ±${document.getElementById('range-slider').value}% change in <i>${varyInp.label}</i> causes the ${cfg.chartLabel} to swing by ${swing.toFixed(1)} units (${pctSwing}% of baseline). ${swing > Math.abs(baselinePM)*0.3 ? 'This is a <b>high-sensitivity variable</b> — small estimation errors can flip the recommendation.' : 'This is a <b>low-sensitivity variable</b> — the recommendation is robust to this uncertainty.'}`);
+
+  if (tipRow) {
+    ins.push(`<b>Tipping point found:</b> Your recommendation changes when ${varyInp.label} ${tipRow.pct > 0 ? 'rises' : 'falls'} by ${Math.abs(tipRow.pct)}%. Use this in your report: "Under my baseline assumptions, the recommendation holds — but if [assumption], the conclusion changes." That is exactly what sensitivity analysis is for.`);
+  } else {
+    ins.push(`<b>Stable recommendation:</b> The recommendation does not change within the tested range. This strengthens your confidence. Write: "Sensitivity analysis shows the recommendation is robust to variation in this variable — even under pessimistic assumptions, the preferred alternative remains the same."`);
+  }
+
+  ins.push(`<b>For your report:</b> Discuss which variable has the most impact on your outcome metric. If two variables have similar sensitivity, prioritize the one that is harder to estimate accurately — that is where Klarna's actual decision-making was most exposed to error.`);
+  ins.push(`<b>Connect to the reversal:</b> Klarna's 2025 course correction is evidence that at least one key assumption (likely customer satisfaction parity or trust retention) was more optimistic than the data supported. Use the tipping point analysis to argue what Klarna's leadership should have stress-tested in early 2024.`);
+
+  return ins;
+}
+
+// ─── PRINT / COPY ─────────────────────────────────────────────────────────────
+function printTable() {
+  window.print();
+}
+
+function copyTable() {
+  const rows = document.querySelectorAll('#sens-table tr');
+  let text = '';
+  rows.forEach(r => {
+    const cells = [...r.querySelectorAll('th,td')].map(c=>c.textContent.trim());
+    text += cells.join('\t') + '\n';
+  });
+  navigator.clipboard.writeText(text).then(() => alert('Table copied to clipboard! Paste into Word or Excel.'));
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+renderInputs();
+renderContext();
+renderVarySelect();
+updateAll();
+</script>
+</body>
+</html>
