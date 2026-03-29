@@ -7,7 +7,7 @@ Individual Assignment 3 — Klarna's AI Pivot: From Full Automation to Human-Hyb
 
 ## 🔗 Live Tool
 
-**[Open the Sensitivity Analysis Tool →](https://krystd09.github.io/mg473-klarna-tool/)**
+**[Open the Sensitivity Analysis Tool →](https://KrysD09.github.io/mg473-klarna-tool/)**
 
 No download required. Opens directly in your browser.
 
