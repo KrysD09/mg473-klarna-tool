@@ -7,7 +7,7 @@ Individual Assignment 3 — Klarna's AI Pivot: From Full Automation to Human-Hyb
 
 ## 🔗 Live Tool
 
-**[Open the Sensitivity Analysis Tool →](https://krystd09.github.io/mg473-klarna-tool/)**
+**[Open the Sensitivity Analysis Tool →](https://KrysD09.github.io/mg473-klarna-tool/)**
 
 No download required. Opens directly in your browser.
 
@@ -79,7 +79,7 @@ All baseline values are drawn from Klarna's public sources:
 **Course:** MG473 — Quantitative & Qualitative Decision-Making  
 **Institution:** Boston University Metropolitan College  
 **Semester:** Spring 2026  
-**Instructor:** [Your name]  
+**Instructor:** Krystie Dickson
 **Assignment:** Individual Assignment 3 (20% of final grade)  
 **Due:** April 30, 2026 at 11:59 pm
 
