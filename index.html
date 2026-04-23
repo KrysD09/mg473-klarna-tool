@@ -555,7 +555,9 @@ function updateAll() {
   });
 
   // Tipping point
-  const tipRow = rows.find(r => {
+  const tipRow = [...rows]
+  .sort((a, b) => Math.abs(a.pct) - Math.abs(b.pct))
+  .find(r => {
     const rec0 = cfg.recLogic(rows[3].pm).cls;
     return cfg.recLogic(r.pm).cls !== rec0 && r.pct !== 0;
   });
