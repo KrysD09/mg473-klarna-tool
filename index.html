@@ -283,9 +283,9 @@ const LENSES = {
     },
     chartLabel: 'Risk-Adjusted Net Value ($M)',
     recLogic: (val) => {
-      if (val > 25) return { cls:'green', icon:'✅', title:'Full AI Automation is Financially Justified', body:`Under your assumptions, the risk-adjusted net value of $${val.toFixed(1)}M makes a strong financial case for the AI-first strategy.` };
-      if (val > 10) return { cls:'amber', icon:'⚖️', title:'Hybrid Model Preferable', body:`The risk-adjusted value of $${val.toFixed(1)}M is positive but narrow. A hybrid model would reduce reversal risk while preserving most of the financial upside. Note: Klarna's own confirmed figures place the baseline here — consistent with their 2025 course correction.` };
-      return { cls:'red', icon:'⚠️', title:'Human-First Strategy Warranted', body:`At a risk-adjusted value of $${val.toFixed(1)}M, the financial case for full automation does not hold. Reversal and churn costs erode the savings significantly.` };
+      if (val > 25) return { cls:'green', icon:'✅', title:'Full AI Automation is Financially Justified', body:`Under your assumptions, the risk-adjusted net value of $${(val+50).toFixed(1)}M makes a strong financial case for the AI-first strategy.` };
+      if (val > 10) return { cls:'amber', icon:'⚖️', title:'Hybrid Model Preferable', body:`The risk-adjusted value of $${(val+50).toFixed(1)}M is positive but narrow. A hybrid model would reduce reversal risk while preserving most of the financial upside. Note: Klarna's own confirmed figures place the baseline here — consistent with their 2025 course correction.` };
+      return { cls:'red', icon:'⚠️', title:'Human-First Strategy Warranted', body:`At a risk-adjusted value of $${(val+50).toFixed(1)}M, the financial case for full automation does not hold. Reversal and churn costs erode the savings significantly.` };
     },
     tippingLabel: 'Risk-Adjusted Net Value',
     tippingDirection: 'falls below $10M',
